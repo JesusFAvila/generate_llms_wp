@@ -2,9 +2,8 @@
 /*
 Plugin Name: LLMs.txt Generator
 Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías.
-Version: 2.2
-Author: Jesús Fernández Ávila
-GitHub: https://github.com/JesusFAvila
+Version: 2.2.1
+Author: Tu Nombre
 */
 
 if (!defined('ABSPATH')) {
@@ -65,7 +64,7 @@ function llms_txt_sanitize($text) {
     return trim(preg_replace('/[\n\r]+/', ' ', sanitize_text_field($text)));
 }
 
-// Generar el archivo llms.txt (solo un archivo)
+// Generar el archivo llms.txt con codificación UTF-8 y BOM
 function generate_llms_txt($force_overwrite = false) {
     $file_path = ABSPATH . "llms.txt";
     $seo_plugin = llms_txt_detect_seo_plugin();
@@ -161,12 +160,14 @@ function generate_llms_txt($force_overwrite = false) {
         }
     }
 
-    $result = file_put_contents($file_path, $content);
+    // Añadir BOM para UTF-8 y escribir el archivo
+    $content_with_bom = "\xEF\xBB\xBF" . $content;
+    $result = file_put_contents($file_path, $content_with_bom);
     if ($result === false) {
         llms_txt_log("Error al escribir el archivo en $file_path.");
         return false;
     }
-    llms_txt_log("Archivo generado correctamente en $file_path.");
+    llms_txt_log("Archivo generado correctamente en $file_path con codificación UTF-8.");
     return true;
 }
 
@@ -383,5 +384,5 @@ function generate_llms_txt_preview() {
     ob_start();
     generate_llms_txt(true);
     $content = ob_get_clean();
-    return file_get_contents(ABSPATH . "llms.txt");
+    return "\xEF\xBB\xBF" . file_get_contents(ABSPATH . "llms.txt");
 }

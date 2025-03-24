@@ -127,7 +127,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Valor por defecto ajustado según presencia de WooCommerce.
 - **Notas**: Mayor facilidad para seleccionar instrucciones optimizadas para IAs.
 
-## Versión 2.2 (Actual)
+## Versión 2.2
 - **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Eliminado soporte multilingüe; ahora solo genera un único archivo `llms.txt`.
@@ -145,13 +145,25 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
 - **Notas**: 
   - Simplificación para un único archivo `llms.txt`, eliminando conflictos con archivos multilingües.
   - Enfocado en descripciones relevantes para IAs, con URLs clave en la cabecera.
-  - Archivos antiguos (ej. `llms-es_ES.txt`) deben eliminarse manualmente si existen.
+
+## Versión 2.2.1 (Actual)
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Añadida codificación UTF-8 con BOM (`\xEF\xBB\xBF`) al generar el archivo `llms.txt`.
+  - Actualizada la previsualización para incluir BOM.
+- **Funcionalidades**:
+  - Soluciona problemas con tildes y caracteres especiales (ej. á, é, ñ) en el archivo generado.
+  - Mantiene todas las características de la versión 2.2 sin cambios adicionales en la estructura o lógica.
+- **Notas**: 
+  - Respuesta a reportes de problemas con caracteres acentuados en varias webs.
+  - El BOM asegura que los clientes identifiquen correctamente la codificación UTF-8.
 
 ## Características Generales
 - **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Generar llms.txt".
 - **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración y acciones manuales.
 - **SEO**: Integración con plugins SEO para títulos y descripciones; detección de sitemap.
 - **WooCommerce**: Soporte completo para productos y categorías con descripciones.
+- **Codificación**: UTF-8 con BOM para compatibilidad con caracteres especiales.
 - **Depuración**: Logs en `wp-content/debug.log` si `WP_DEBUG` está activo.
 
 ## Notas Finales

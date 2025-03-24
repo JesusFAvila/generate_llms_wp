@@ -3,7 +3,8 @@
 Plugin Name: LLMs.txt Generator
 Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías.
 Version: 2.2
-Author: Tu Nombre
+Author: Jesús Fernández Ávila
+GitHub: https://github.com/JesusFAvila
 */
 
 if (!defined('ABSPATH')) {

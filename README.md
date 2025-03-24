@@ -11,7 +11,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
 - **Notas**: Versión inicial simple sin interfaz de administración ni opciones avanzadas.
 
 ## Versión 1.2
-- **Fecha**: 24 de marzo de 2025 (inicio documentado).
+- **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Introducción de la opción de sobrescritura automática configurable (`llms_txt_overwrite`).
   - Añadido un panel de administración en `Ajustes > LLMs.txt` para controlar si el archivo se sobrescribe automáticamente.
@@ -90,7 +90,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Categorías de producto mantienen límite de 5.
 - **Notas**: Respuesta a la solicitud de mostrar todo el contenido disponible.
 
-## Versión 1.9 (Actual)
+## Versión 1.9
 - **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Simplificación de Páginas y Posts: solo título, URL y fecha de publicación.
@@ -100,16 +100,63 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Mantiene detección SEO para títulos, panel de administración y campos personalizables.
 - **Notas**: Versión más ligera y enfocada en metadatos básicos.
 
+## Versión 2.0
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Eliminado límite para Categorías de Producto (todas incluidas).
+  - Simplificación de la detección SEO (solo títulos).
+  - Estructura mejorada con nuevas secciones y opciones avanzadas.
+- **Funcionalidades**:
+  - Nueva sección "Productos" con todos los productos de WooCommerce (título, URL, fecha).
+  - Formato de fecha personalizable mediante campo en el panel.
+  - Metadatos adicionales: Autor en Páginas y Posts; Categorías en Posts.
+  - Sección "## Sitemap" con URL del sitemap XML si un plugin SEO está activo.
+  - Campo "Instrucciones" en el panel, mostrado como `> Instrucciones:`.
+  - Validación y sanitización de texto.
+  - Vista previa por idioma en el panel.
+  - Soporte multilingüe con archivos separados (ej. `llms-es.txt`).
+- **Notas**: Versión más completa y robusta, sin límites configurables por solicitud del usuario.
+
+## Versión 2.1
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Campo "Instrucciones" convertido en un `<select>` con opciones predefinidas y personalizable.
+- **Funcionalidades**:
+  - 11 opciones de instrucciones (6 genéricas, 4 para e-commerce, 1 personalizada).
+  - Opción "Personalizado" muestra un `textarea` para entrada manual.
+  - Valor por defecto ajustado según presencia de WooCommerce.
+- **Notas**: Mayor facilidad para seleccionar instrucciones optimizadas para IAs.
+
+## Versión 2.2 (Actual)
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Eliminado soporte multilingüe; ahora solo genera un único archivo `llms.txt`.
+  - Eliminada sección "## Recursos Adicionales" del archivo.
+  - Eliminada opción "Sobrescribir Automáticamente" del panel y lógica.
+  - Añadida descripción en el panel sobre el propósito del archivo `llms.txt`.
+  - Eliminado campo "Autor" de Páginas, Posts, Productos y Categorías.
+  - Añadida "Descripción" en Páginas, Posts, Productos y Categorías (si está definida, desde SEO o nativa).
+  - URLs de `sitemap.xml` y `robots.txt` movidas a la cabecera tras las instrucciones.
+- **Funcionalidades**:
+  - Generación manual con botón "Generar llms.txt" o automática al activar/guardar contenido.
+  - Descripciones extraídas de metadatos SEO (si disponibles) o nativas (excerpts, short descriptions).
+  - Encabezado incluye: Nombre, Instrucciones, Sitemap, Robots y Última Generación.
+  - Estructura: Acerca de, Páginas, Posts, Productos, Categorías de Producto.
+- **Notas**: 
+  - Simplificación para un único archivo `llms.txt`, eliminando conflictos con archivos multilingües.
+  - Enfocado en descripciones relevantes para IAs, con URLs clave en la cabecera.
+  - Archivos antiguos (ej. `llms-es_ES.txt`) deben eliminarse manualmente si existen.
+
 ## Características Generales
-- **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Sobrescribir Ahora".
-- **Gestión**: Panel en `Ajustes > LLMs.txt` con opciones automáticas y manuales.
-- **SEO**: Integración con plugins SEO para títulos (opcional).
-- **WooCommerce**: Soporte para categorías de producto si está instalado.
+- **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Generar llms.txt".
+- **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración y acciones manuales.
+- **SEO**: Integración con plugins SEO para títulos y descripciones; detección de sitemap.
+- **WooCommerce**: Soporte completo para productos y categorías con descripciones.
 - **Depuración**: Logs en `wp-content/debug.log` si `WP_DEBUG` está activo.
 
 ## Notas Finales
-- **Rendimiento**: En sitios con muchas páginas/posts, el archivo puede crecer significativamente. Considerar límites opcionales en futuras versiones.
-- **Compatibilidad**: Probado en WordPress estándar con WooCommerce y plugins SEO populares.
-- **Futuras Mejoras**: Posibilidad de añadir límites configurables, formato de fecha personalizado o soporte para más tipos de contenido (ej. productos individuales).
+- **Rendimiento**: Sin límites, el archivo puede crecer en sitios grandes; considerar caché si es necesario.
+- **Compatibilidad**: Probado con WordPress, WooCommerce y plugins SEO populares.
+- **Futuras Mejoras**: Posibilidad de añadir soporte para CPTs específicos o filtros de contenido.
 
 Última actualización: 24 de marzo de 2025.

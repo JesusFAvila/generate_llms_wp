@@ -1,13 +1,10 @@
 <?php
 /*
 Plugin Name: LLMs.txt Generator
-Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías.
-Version: 2.2.1
+Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
 Author: Jesús Fernández Ávila
 GitHub: https://github.com/JesusFAvila
 */
-
-
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -27,6 +24,8 @@ function llms_txt_detect_seo_plugin() {
             'active' => defined('WPSEO_VERSION'),
             'title' => '_yoast_wpseo_title',
             'description' => '_yoast_wpseo_metadesc',
+            'noindex' => '_yoast_wpseo_meta-robots-noindex',
+            'term_noindex' => '_yoast_wpseo_noindex',
             'sitemap' => home_url('/sitemap_index.xml'),
         ],
         'aioseo' => [
@@ -34,6 +33,8 @@ function llms_txt_detect_seo_plugin() {
             'active' => function_exists('aioseo'),
             'title' => '_aioseo_title',
             'description' => '_aioseo_description',
+            'noindex' => '_aioseo_noindex',
+            'term_noindex' => '_aioseo_noindex', // AIOSEO usa el mismo campo para términos
             'sitemap' => home_url('/sitemap.xml'),
         ],
         'rankmath' => [
@@ -41,6 +42,8 @@ function llms_txt_detect_seo_plugin() {
             'active' => function_exists('rank_math'),
             'title' => 'rank_math_title',
             'description' => 'rank_math_description',
+            'noindex' => 'rank_math_robots',
+            'term_noindex' => 'rank_math_robots',
             'sitemap' => home_url('/sitemap_index.xml'),
         ],
         'seopress' => [
@@ -48,6 +51,8 @@ function llms_txt_detect_seo_plugin() {
             'active' => defined('SEOPRESS_VERSION'),
             'title' => '_seopress_titles_title',
             'description' => '_seopress_titles_desc',
+            'noindex' => '_seopress_robots_noindex',
+            'term_noindex' => '_seopress_robots_noindex',
             'sitemap' => home_url('/sitemap.xml'),
         ],
     ];
@@ -61,12 +66,34 @@ function llms_txt_detect_seo_plugin() {
     return null;
 }
 
+// Verificar si un elemento tiene noindex
+function llms_txt_is_noindex($post_id, $seo_plugin, $is_term = false) {
+    if (!$seo_plugin) return false;
+
+    $meta_key = $is_term ? $seo_plugin['term_noindex'] : $seo_plugin['noindex'];
+
+    if ($seo_plugin['name'] === 'Yoast SEO') {
+        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
+        return $value === '1';
+    } elseif ($seo_plugin['name'] === 'All in One SEO') {
+        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
+        return $value === '1' || $value === true;
+    } elseif ($seo_plugin['name'] === 'Rank Math') {
+        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
+        return is_array($value) && in_array('noindex', $value);
+    } elseif ($seo_plugin['name'] === 'SEOPress') {
+        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
+        return $value === 'yes';
+    }
+    return false;
+}
+
 // Sanitizar texto para Markdown
 function llms_txt_sanitize($text) {
     return trim(preg_replace('/[\n\r]+/', ' ', sanitize_text_field($text)));
 }
 
-// Generar el archivo llms.txt con codificación UTF-8 y BOM
+// Generar el archivo llms.txt con codificación UTF-8 y BOM, excluyendo noindex
 function generate_llms_txt($force_overwrite = false) {
     $file_path = ABSPATH . "llms.txt";
     $seo_plugin = llms_txt_detect_seo_plugin();
@@ -105,11 +132,12 @@ function generate_llms_txt($force_overwrite = false) {
     if ($custom_location) $content .= "- Ubicación: " . $custom_location . "\n";
     $content .= "- URL: " . home_url() . "\n\n";
 
-    // Páginas
+    // Páginas (excluyendo noindex)
     $pages = get_pages(array('post_status' => 'publish'));
     if (!empty($pages)) {
         $content .= "## Páginas\n";
         foreach ($pages as $page) {
+            if (llms_txt_is_noindex($page->ID, $seo_plugin)) continue;
             $title = $seo_plugin && $seo_plugin['title'] ? get_post_meta($page->ID, $seo_plugin['title'], true) : $page->post_title;
             $title = $title ?: $page->post_title;
             $desc = $seo_plugin && $seo_plugin['description'] ? get_post_meta($page->ID, $seo_plugin['description'], true) : $page->post_excerpt;
@@ -120,11 +148,12 @@ function generate_llms_txt($force_overwrite = false) {
         $content .= "\n";
     }
 
-    // Posts
+    // Posts (excluyendo noindex)
     $posts = get_posts(array('numberposts' => -1, 'post_status' => 'publish'));
     if (!empty($posts)) {
         $content .= "## Posts\n";
         foreach ($posts as $post) {
+            if (llms_txt_is_noindex($post->ID, $seo_plugin)) continue;
             $title = $seo_plugin && $seo_plugin['title'] ? get_post_meta($post->ID, $seo_plugin['title'], true) : $post->post_title;
             $title = $title ?: $post->post_title;
             $desc = $seo_plugin && $seo_plugin['description'] ? get_post_meta($post->ID, $seo_plugin['description'], true) : $post->post_excerpt;
@@ -135,12 +164,13 @@ function generate_llms_txt($force_overwrite = false) {
         $content .= "\n";
     }
 
-    // Productos (WooCommerce)
+    // Productos (WooCommerce, excluyendo noindex)
     if (class_exists('WooCommerce')) {
         $products = wc_get_products(array('status' => 'publish', 'limit' => -1));
         if (!empty($products)) {
             $content .= "## Productos\n";
             foreach ($products as $product) {
+                if (llms_txt_is_noindex($product->get_id(), $seo_plugin)) continue;
                 $title = $product->get_name();
                 $desc = $product->get_short_description();
                 $date = date_i18n($date_format, strtotime($product->get_date_created()));
@@ -154,6 +184,7 @@ function generate_llms_txt($force_overwrite = false) {
         if (!empty($product_categories)) {
             $content .= "## Categorías de Producto\n";
             foreach ($product_categories as $category) {
+                if (llms_txt_is_noindex($category->term_id, $seo_plugin, true)) continue;
                 $desc = $category->description;
                 $content .= "- [$category->name](" . get_term_link($category->term_id) . ")\n";
                 if ($desc) $content .= "  - Descripción: " . llms_txt_sanitize($desc) . "\n";

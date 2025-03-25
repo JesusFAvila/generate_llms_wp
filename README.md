@@ -172,7 +172,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Si no hay plugin SEO activo, no se aplica filtro de `noindex` y se incluye todo el contenido publicado.
   - Alinea el archivo `llms.txt` con las preferencias de indexación del sitio.
 
-## Versión 2.3 (Actual)
+## Versión 2.3
 - **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Panel de administración: Campos de configuración reorganizados en una tabla de 2 columnas para reducir espacio visual.
@@ -190,13 +190,32 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Mejora la usabilidad del panel y la flexibilidad para sitios multilingües sin generar archivos separados.
   - Compatible con instalaciones modernas de WordPress y PHP; probado para seguridad y rendimiento.
 
+## Versión 2.4 (Actual)
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Idioma por defecto cambiado a "Español" (en lugar de `es` o `es-ES`).
+  - URLs de idiomas (`llms_txt_url_es`, `llms_txt_url_en`, `llms_txt_url_fr`) ahora vacías por defecto; solo se rellenan si el usuario lo desea.
+  - Añadidos campos para URLs de redes sociales: Facebook (`llms_txt_facebook`), Instagram (`llms_txt_instagram`), LinkedIn (`llms_txt_linkedin`), YouTube (`llms_txt_youtube`).
+  - Añadido campo `llms_txt_local_business` tras "Dirección" para la URL de la ficha de Negocio Local.
+  - Añadido campo `llms_txt_contact_page` para la URL de la página de contacto.
+  - Añadidos campos `llms_txt_phone` (teléfono) y `llms_txt_email` (email de la empresa).
+  - Campos nuevos incluidos en la sección "Acerca de" del archivo `llms.txt` solo si tienen valores.
+- **Funcionalidades**:
+  - Nuevas opciones para redes sociales, Local Business, contacto, teléfono y email, todas con sanitización adecuada (`esc_url_raw`, `sanitize_text_field`, `sanitize_email`).
+  - Panel de administración reorganizado para incluir los nuevos campos en la tabla de 2 columnas.
+  - Mantiene todas las características previas: exclusión de `noindex`, codificación UTF-8 con BOM, integración SEO y WooCommerce.
+- **Notas**: 
+  - Mejora la representación del negocio en el archivo con datos de contacto y presencia en redes sociales.
+  - Los campos opcionales permiten flexibilidad al usuario para personalizar la información.
+
 ## Características Generales
 - **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Generar llms.txt".
 - **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración en tabla de 2 columnas y acciones manuales.
 - **SEO**: Integración con plugins SEO para títulos, descripciones y estado `noindex`; detección de sitemap.
 - **WooCommerce**: Soporte completo para productos y categorías con descripciones, excluyendo `noindex`.
 - **Codificación**: UTF-8 con BOM para compatibilidad con caracteres especiales.
-- **Multilingüe**: URLs por idioma (español, inglés, francés) configurables en el panel.
+- **Multilingüe**: URLs por idioma (español, inglés, francés) configurables, vacías por defecto.
+- **Contacto y Redes**: Soporte para URLs de redes sociales, Local Business, página de contacto, teléfono y email.
 - **Depuración**: Logs en `wp-content/debug.log` si `WP_DEBUG` está activo.
 
 ## Notas Finales

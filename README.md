@@ -146,7 +146,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Simplificación para un único archivo `llms.txt`, eliminando conflictos con archivos multilingües.
   - Enfocado en descripciones relevantes para IAs, con URLs clave en la cabecera.
 
-## Versión 2.2.1 (Actual)
+## Versión 2.2.1
 - **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Añadida codificación UTF-8 con BOM (`\xEF\xBB\xBF`) al generar el archivo `llms.txt`.
@@ -158,17 +158,23 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Respuesta a reportes de problemas con caracteres acentuados en varias webs.
   - El BOM asegura que los clientes identifiquen correctamente la codificación UTF-8.
 
+## Versión 2.2.2 (Actual)
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Añadida exclusión de contenido marcado como `noindex` en Páginas, Posts, Productos y Categorías de Producto.
+  - Actualizada la detección de plugins SEO para incluir claves de metadatos `noindex` y `term_noindex`.
+  - Nueva función `llms_txt_is_noindex` para verificar el estado `noindex` según el plugin SEO activo.
+- **Funcionalidades**:
+  - Solo se incluye contenido indexable (sin `noindex`) en el archivo `llms.txt`, respetando las configuraciones SEO.
+  - Compatible con Yoast SEO, Rank Math, AIOSEO y SEOPress para posts y términos.
+  - Sin cambios en la estructura del archivo ni en otras funcionalidades.
+- **Notas**: 
+  - Si no hay plugin SEO activo, no se aplica filtro de `noindex` y se incluye todo el contenido publicado.
+  - Alinea el archivo `llms.txt` con las preferencias de indexación del sitio.
+
 ## Características Generales
 - **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Generar llms.txt".
 - **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración y acciones manuales.
-- **SEO**: Integración con plugins SEO para títulos y descripciones; detección de sitemap.
-- **WooCommerce**: Soporte completo para productos y categorías con descripciones.
-- **Codificación**: UTF-8 con BOM para compatibilidad con caracteres especiales.
-- **Depuración**: Logs en `wp-content/debug.log` si `WP_DEBUG` está activo.
-
-## Notas Finales
-- **Rendimiento**: Sin límites, el archivo puede crecer en sitios grandes; considerar caché si es necesario.
-- **Compatibilidad**: Probado con WordPress, WooCommerce y plugins SEO populares.
-- **Futuras Mejoras**: Posibilidad de añadir soporte para CPTs específicos o filtros de contenido.
-
-Última actualización: 24 de marzo de 2025.
+- **SEO**: Integración con plugins SEO para títulos, descripciones y estado `noindex`; detección de sitemap.
+- **WooCommerce**: Soporte completo para productos y categorías con descripciones, excluyendo `noindex`.
+- **Codificación**: UTF-

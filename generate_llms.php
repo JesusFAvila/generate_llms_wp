@@ -2,9 +2,9 @@
 /*
  * Plugin Name: LLMs.txt Generator
  * Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
- * Version: 2.3
+ * Version: 2.4
  * Author: Jesús Fernández Ávila
- * GitHub: https://github.com/JesusFAvila
+ * GitHub: https://github.com/JesusFAvila/
  * Requires at least: 5.0
  * Requires PHP: 7.4
  * Text Domain: llms-txt-generator
@@ -136,12 +136,20 @@ function generate_llms_txt($force_overwrite = false) {
     $custom_name = llms_txt_sanitize(get_option('llms_txt_name', get_bloginfo('name')));
     $custom_description = llms_txt_sanitize(get_option('llms_txt_description', get_bloginfo('description')));
     $custom_keywords = llms_txt_sanitize(get_option('llms_txt_keywords', ''));
-    $custom_language = llms_txt_sanitize(get_option('llms_txt_language', get_bloginfo('language')));
+    $custom_language = llms_txt_sanitize(get_option('llms_txt_language', 'Español'));
     $custom_address = llms_txt_sanitize(get_option('llms_txt_address', ''));
+    $custom_local_business = esc_url_raw(get_option('llms_txt_local_business', ''));
     $custom_location = llms_txt_sanitize(get_option('llms_txt_location', ''));
-    $custom_url_es = llms_txt_sanitize(get_option('llms_txt_url_es', home_url('/es')));
-    $custom_url_en = llms_txt_sanitize(get_option('llms_txt_url_en', home_url('/en')));
-    $custom_url_fr = llms_txt_sanitize(get_option('llms_txt_url_fr', home_url('/fr')));
+    $custom_url_es = esc_url_raw(get_option('llms_txt_url_es', ''));
+    $custom_url_en = esc_url_raw(get_option('llms_txt_url_en', ''));
+    $custom_url_fr = esc_url_raw(get_option('llms_txt_url_fr', ''));
+    $custom_facebook = esc_url_raw(get_option('llms_txt_facebook', ''));
+    $custom_instagram = esc_url_raw(get_option('llms_txt_instagram', ''));
+    $custom_linkedin = esc_url_raw(get_option('llms_txt_linkedin', ''));
+    $custom_youtube = esc_url_raw(get_option('llms_txt_youtube', ''));
+    $custom_contact_page = esc_url_raw(get_option('llms_txt_contact_page', ''));
+    $custom_phone = llms_txt_sanitize(get_option('llms_txt_phone', ''));
+    $custom_email = sanitize_email(get_option('llms_txt_email', ''));
     $custom_instructions = get_option('llms_txt_instructions', class_exists('WooCommerce') 
         ? 'Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales' 
         : 'Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles');
@@ -162,10 +170,18 @@ function generate_llms_txt($force_overwrite = false) {
     if ($custom_keywords) $content .= "- Palabras clave: " . $custom_keywords . "\n";
     if ($custom_language) $content .= "- Idioma: " . $custom_language . "\n";
     if ($custom_address) $content .= "- Dirección: " . $custom_address . "\n";
+    if ($custom_local_business) $content .= "- Ficha de Negocio Local: " . $custom_local_business . "\n";
     if ($custom_location) $content .= "- Ubicación: " . $custom_location . "\n";
     if ($custom_url_es) $content .= "- URL (Español): " . $custom_url_es . "\n";
     if ($custom_url_en) $content .= "- URL (Inglés): " . $custom_url_en . "\n";
     if ($custom_url_fr) $content .= "- URL (Francés): " . $custom_url_fr . "\n";
+    if ($custom_facebook) $content .= "- Facebook: " . $custom_facebook . "\n";
+    if ($custom_instagram) $content .= "- Instagram: " . $custom_instagram . "\n";
+    if ($custom_linkedin) $content .= "- LinkedIn: " . $custom_linkedin . "\n";
+    if ($custom_youtube) $content .= "- YouTube: " . $custom_youtube . "\n";
+    if ($custom_contact_page) $content .= "- Página de Contacto: " . $custom_contact_page . "\n";
+    if ($custom_phone) $content .= "- Teléfono: " . $custom_phone . "\n";
+    if ($custom_email) $content .= "- Email: " . $custom_email . "\n";
     $content .= "\n";
 
     // Páginas (excluyendo noindex)
@@ -282,16 +298,24 @@ function llms_txt_admin_menu() {
  */
 add_action('admin_init', 'llms_txt_settings_init');
 function llms_txt_settings_init() {
-    // Registrar opciones
+    // Registrar opciones con sanitización
     register_setting('llms_txt_options', 'llms_txt_name', ['sanitize_callback' => 'sanitize_text_field']);
     register_setting('llms_txt_options', 'llms_txt_description', ['sanitize_callback' => 'sanitize_textarea_field']);
     register_setting('llms_txt_options', 'llms_txt_keywords', ['sanitize_callback' => 'sanitize_text_field']);
     register_setting('llms_txt_options', 'llms_txt_language', ['sanitize_callback' => 'sanitize_text_field']);
     register_setting('llms_txt_options', 'llms_txt_address', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_local_business', ['sanitize_callback' => 'esc_url_raw']);
     register_setting('llms_txt_options', 'llms_txt_location', ['sanitize_callback' => 'sanitize_text_field']);
     register_setting('llms_txt_options', 'llms_txt_url_es', ['sanitize_callback' => 'esc_url_raw']);
     register_setting('llms_txt_options', 'llms_txt_url_en', ['sanitize_callback' => 'esc_url_raw']);
     register_setting('llms_txt_options', 'llms_txt_url_fr', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_facebook', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_instagram', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_linkedin', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_youtube', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_contact_page', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_phone', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_email', ['sanitize_callback' => 'sanitize_email']);
     register_setting('llms_txt_options', 'llms_txt_instructions', ['sanitize_callback' => 'sanitize_text_field']);
     register_setting('llms_txt_options', 'llms_txt_custom_instructions', ['sanitize_callback' => 'sanitize_textarea_field']);
     register_setting('llms_txt_options', 'llms_txt_date_format', ['sanitize_callback' => 'sanitize_text_field']);
@@ -305,10 +329,18 @@ function llms_txt_settings_init() {
     add_settings_field('llms_txt_keywords', __('Palabras clave', 'llms-txt-generator'), 'llms_txt_keywords_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_language', __('Idioma', 'llms-txt-generator'), 'llms_txt_language_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_address', __('Dirección', 'llms-txt-generator'), 'llms_txt_address_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_local_business', __('Ficha de Negocio Local', 'llms-txt-generator'), 'llms_txt_local_business_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_location', __('Ubicación', 'llms-txt-generator'), 'llms_txt_location_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_url_es', __('URL (Español)', 'llms-txt-generator'), 'llms_txt_url_es_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_url_en', __('URL (Inglés)', 'llms-txt-generator'), 'llms_txt_url_en_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_url_fr', __('URL (Francés)', 'llms-txt-generator'), 'llms_txt_url_fr_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_facebook', __('Facebook', 'llms-txt-generator'), 'llms_txt_facebook_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_instagram', __('Instagram', 'llms-txt-generator'), 'llms_txt_instagram_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_linkedin', __('LinkedIn', 'llms-txt-generator'), 'llms_txt_linkedin_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_youtube', __('YouTube', 'llms-txt-generator'), 'llms_txt_youtube_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_contact_page', __('Página de Contacto', 'llms-txt-generator'), 'llms_txt_contact_page_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_phone', __('Teléfono', 'llms-txt-generator'), 'llms_txt_phone_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_email', __('Email', 'llms-txt-generator'), 'llms_txt_email_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_instructions', __('Instrucciones para IAs', 'llms-txt-generator'), 'llms_txt_instructions_callback', 'llms-txt', 'llms_txt_section');
     add_settings_field('llms_txt_date_format', __('Formato de Fecha', 'llms-txt-generator'), 'llms_txt_date_format_callback', 'llms-txt', 'llms_txt_section');
 }
@@ -348,10 +380,10 @@ function llms_txt_keywords_callback() {
 }
 
 function llms_txt_language_callback() {
-    $value = get_option('llms_txt_language', get_bloginfo('language'));
+    $value = get_option('llms_txt_language', 'Español');
     ?>
     <input type="text" name="llms_txt_language" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description"><?php echo esc_html__('Idioma del sitio (por defecto: ', 'llms-txt-generator') . get_bloginfo('language') . ').'; ?></p>
+    <p class="description"><?php esc_html_e('Idioma del sitio (por defecto: Español).', 'llms-txt-generator'); ?></p>
     <?php
 }
 
@@ -360,6 +392,14 @@ function llms_txt_address_callback() {
     ?>
     <input type="text" name="llms_txt_address" value="<?php echo esc_attr($value); ?>" class="regular-text" />
     <p class="description"><?php esc_html_e('Dirección física o virtual.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_local_business_callback() {
+    $value = get_option('llms_txt_local_business', '');
+    ?>
+    <input type="url" name="llms_txt_local_business" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL de la ficha de Negocio Local (ej. Google My Business).', 'llms-txt-generator'); ?></p>
     <?php
 }
 
@@ -372,7 +412,7 @@ function llms_txt_location_callback() {
 }
 
 function llms_txt_url_es_callback() {
-    $value = get_option('llms_txt_url_es', home_url('/es'));
+    $value = get_option('llms_txt_url_es', '');
     ?>
     <input type="url" name="llms_txt_url_es" value="<?php echo esc_attr($value); ?>" class="regular-text" />
     <p class="description"><?php esc_html_e('URL del sitio en español.', 'llms-txt-generator'); ?></p>
@@ -380,7 +420,7 @@ function llms_txt_url_es_callback() {
 }
 
 function llms_txt_url_en_callback() {
-    $value = get_option('llms_txt_url_en', home_url('/en'));
+    $value = get_option('llms_txt_url_en', '');
     ?>
     <input type="url" name="llms_txt_url_en" value="<?php echo esc_attr($value); ?>" class="regular-text" />
     <p class="description"><?php esc_html_e('URL del sitio en inglés.', 'llms-txt-generator'); ?></p>
@@ -388,10 +428,66 @@ function llms_txt_url_en_callback() {
 }
 
 function llms_txt_url_fr_callback() {
-    $value = get_option('llms_txt_url_fr', home_url('/fr'));
+    $value = get_option('llms_txt_url_fr', '');
     ?>
     <input type="url" name="llms_txt_url_fr" value="<?php echo esc_attr($value); ?>" class="regular-text" />
     <p class="description"><?php esc_html_e('URL del sitio en francés.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_facebook_callback() {
+    $value = get_option('llms_txt_facebook', '');
+    ?>
+    <input type="url" name="llms_txt_facebook" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del perfil de Facebook.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_instagram_callback() {
+    $value = get_option('llms_txt_instagram', '');
+    ?>
+    <input type="url" name="llms_txt_instagram" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del perfil de Instagram.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_linkedin_callback() {
+    $value = get_option('llms_txt_linkedin', '');
+    ?>
+    <input type="url" name="llms_txt_linkedin" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del perfil de LinkedIn.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_youtube_callback() {
+    $value = get_option('llms_txt_youtube', '');
+    ?>
+    <input type="url" name="llms_txt_youtube" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del canal de YouTube.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_contact_page_callback() {
+    $value = get_option('llms_txt_contact_page', '');
+    ?>
+    <input type="url" name="llms_txt_contact_page" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL de la página de contacto.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_phone_callback() {
+    $value = get_option('llms_txt_phone', '');
+    ?>
+    <input type="text" name="llms_txt_phone" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('Teléfono de contacto.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_email_callback() {
+    $value = get_option('llms_txt_email', '');
+    ?>
+    <input type="email" name="llms_txt_email" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('Email de contacto de la empresa.', 'llms-txt-generator'); ?></p>
     <?php
 }
 
@@ -500,16 +596,40 @@ function llms_txt_settings_page() {
                     <td><?php llms_txt_address_callback(); ?></td>
                 </tr>
                 <tr>
+                    <th scope="row"><?php esc_html_e('Ficha de Negocio Local', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_local_business_callback(); ?></td>
                     <th scope="row"><?php esc_html_e('Ubicación', 'llms-txt-generator'); ?></th>
                     <td><?php llms_txt_location_callback(); ?></td>
-                    <th scope="row"><?php esc_html_e('URL (Español)', 'llms-txt-generator'); ?></th>
-                    <td><?php llms_txt_url_es_callback(); ?></td>
                 </tr>
                 <tr>
+                    <th scope="row"><?php esc_html_e('URL (Español)', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_url_es_callback(); ?></td>
                     <th scope="row"><?php esc_html_e('URL (Inglés)', 'llms-txt-generator'); ?></th>
                     <td><?php llms_txt_url_en_callback(); ?></td>
+                </tr>
+                <tr>
                     <th scope="row"><?php esc_html_e('URL (Francés)', 'llms-txt-generator'); ?></th>
                     <td><?php llms_txt_url_fr_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Facebook', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_facebook_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Instagram', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_instagram_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('LinkedIn', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_linkedin_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('YouTube', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_youtube_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Página de Contacto', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_contact_page_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Teléfono', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_phone_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Email', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_email_callback(); ?></td>
                 </tr>
                 <tr>
                     <th scope="row"><?php esc_html_e('Instrucciones para IAs', 'llms-txt-generator'); ?></th>

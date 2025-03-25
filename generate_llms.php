@@ -1,22 +1,35 @@
 <?php
 /*
-Plugin Name: LLMs.txt Generator
-Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
-Author: Jesús Fernández Ávila
-GitHub: https://github.com/JesusFAvila
-*/
+ * Plugin Name: LLMs.txt Generator
+ * Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
+ * Version: 2.3
+ * Author: Jesús Fernández Ávila
+ * GitHub: https://github.com/JesusFAvila
+ * Requires at least: 5.0
+ * Requires PHP: 7.4
+ * Text Domain: llms-txt-generator
+ */
+
 if (!defined('ABSPATH')) {
-    exit;
+    exit; // Evita acceso directo al archivo
 }
 
-// Función para registrar mensajes de depuración
+/**
+ * Registra mensajes de depuración en el log si WP_DEBUG está activo.
+ *
+ * @param string $message Mensaje a registrar.
+ */
 function llms_txt_log($message) {
     if (defined('WP_DEBUG') && WP_DEBUG) {
         error_log("[LLMs.txt] " . $message . " - " . date('Y-m-d H:i:s'));
     }
 }
 
-// Detectar plugin SEO activo y extraer datos
+/**
+ * Detecta el plugin SEO activo y devuelve sus metadatos.
+ *
+ * @return array|null Datos del plugin SEO activo o null si no hay ninguno.
+ */
 function llms_txt_detect_seo_plugin() {
     $seo_plugins = [
         'yoast' => [
@@ -34,7 +47,7 @@ function llms_txt_detect_seo_plugin() {
             'title' => '_aioseo_title',
             'description' => '_aioseo_description',
             'noindex' => '_aioseo_noindex',
-            'term_noindex' => '_aioseo_noindex', // AIOSEO usa el mismo campo para términos
+            'term_noindex' => '_aioseo_noindex',
             'sitemap' => home_url('/sitemap.xml'),
         ],
         'rankmath' => [
@@ -57,7 +70,7 @@ function llms_txt_detect_seo_plugin() {
         ],
     ];
 
-    foreach ($seo_plugins as $key => $plugin) {
+    foreach ($seo_plugins as $plugin) {
         if ($plugin['active']) {
             llms_txt_log("Plugin SEO detectado: " . $plugin['name']);
             return $plugin;
@@ -66,34 +79,50 @@ function llms_txt_detect_seo_plugin() {
     return null;
 }
 
-// Verificar si un elemento tiene noindex
-function llms_txt_is_noindex($post_id, $seo_plugin, $is_term = false) {
+/**
+ * Verifica si un post o término tiene la etiqueta noindex según el plugin SEO.
+ *
+ * @param int $id ID del post o término.
+ * @param array|null $seo_plugin Datos del plugin SEO activo.
+ * @param bool $is_term Indica si es un término (categoría).
+ * @return bool True si tiene noindex, false si no.
+ */
+function llms_txt_is_noindex($id, $seo_plugin, $is_term = false) {
     if (!$seo_plugin) return false;
 
     $meta_key = $is_term ? $seo_plugin['term_noindex'] : $seo_plugin['noindex'];
+    $value = get_metadata($is_term ? 'term' : 'post', $id, $meta_key, true);
 
-    if ($seo_plugin['name'] === 'Yoast SEO') {
-        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
-        return $value === '1';
-    } elseif ($seo_plugin['name'] === 'All in One SEO') {
-        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
-        return $value === '1' || $value === true;
-    } elseif ($seo_plugin['name'] === 'Rank Math') {
-        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
-        return is_array($value) && in_array('noindex', $value);
-    } elseif ($seo_plugin['name'] === 'SEOPress') {
-        $value = get_metadata($is_term ? 'term' : 'post', $post_id, $meta_key, true);
-        return $value === 'yes';
+    switch ($seo_plugin['name']) {
+        case 'Yoast SEO':
+            return $value === '1';
+        case 'All in One SEO':
+            return $value === '1' || $value === true;
+        case 'Rank Math':
+            return is_array($value) && in_array('noindex', $value);
+        case 'SEOPress':
+            return $value === 'yes';
+        default:
+            return false;
     }
-    return false;
 }
 
-// Sanitizar texto para Markdown
+/**
+ * Sanitiza texto para Markdown, eliminando saltos de línea múltiples.
+ *
+ * @param string $text Texto a sanitizar.
+ * @return string Texto limpio.
+ */
 function llms_txt_sanitize($text) {
     return trim(preg_replace('/[\n\r]+/', ' ', sanitize_text_field($text)));
 }
 
-// Generar el archivo llms.txt con codificación UTF-8 y BOM, excluyendo noindex
+/**
+ * Genera el archivo llms.txt con contenido del sitio, excluyendo noindex.
+ *
+ * @param bool $force_overwrite Forzar sobrescritura del archivo existente.
+ * @return bool True si se generó correctamente, false si falló.
+ */
 function generate_llms_txt($force_overwrite = false) {
     $file_path = ABSPATH . "llms.txt";
     $seo_plugin = llms_txt_detect_seo_plugin();
@@ -103,19 +132,23 @@ function generate_llms_txt($force_overwrite = false) {
         return false;
     }
 
-    // Obtener opciones personalizadas
+    // Obtener opciones personalizadas con sanitización
     $custom_name = llms_txt_sanitize(get_option('llms_txt_name', get_bloginfo('name')));
     $custom_description = llms_txt_sanitize(get_option('llms_txt_description', get_bloginfo('description')));
     $custom_keywords = llms_txt_sanitize(get_option('llms_txt_keywords', ''));
     $custom_language = llms_txt_sanitize(get_option('llms_txt_language', get_bloginfo('language')));
     $custom_address = llms_txt_sanitize(get_option('llms_txt_address', ''));
     $custom_location = llms_txt_sanitize(get_option('llms_txt_location', ''));
+    $custom_url_es = llms_txt_sanitize(get_option('llms_txt_url_es', home_url('/es')));
+    $custom_url_en = llms_txt_sanitize(get_option('llms_txt_url_en', home_url('/en')));
+    $custom_url_fr = llms_txt_sanitize(get_option('llms_txt_url_fr', home_url('/fr')));
     $custom_instructions = get_option('llms_txt_instructions', class_exists('WooCommerce') 
         ? 'Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales' 
         : 'Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles');
     $custom_instructions = $custom_instructions === 'Personalizado' ? llms_txt_sanitize(get_option('llms_txt_custom_instructions', '')) : $custom_instructions;
-    $date_format = get_option('llms_txt_date_format', 'Y-m-d');
+    $date_format = sanitize_text_field(get_option('llms_txt_date_format', 'Y-m-d'));
 
+    // Construir contenido del archivo
     $content = "# " . ($custom_name ?: 'Sitio Web') . "\n";
     if ($custom_description) $content .= "> " . $custom_description . "\n";
     if ($custom_instructions) $content .= "> Instrucciones: " . $custom_instructions . "\n";
@@ -130,10 +163,13 @@ function generate_llms_txt($force_overwrite = false) {
     if ($custom_language) $content .= "- Idioma: " . $custom_language . "\n";
     if ($custom_address) $content .= "- Dirección: " . $custom_address . "\n";
     if ($custom_location) $content .= "- Ubicación: " . $custom_location . "\n";
-    $content .= "- URL: " . home_url() . "\n\n";
+    if ($custom_url_es) $content .= "- URL (Español): " . $custom_url_es . "\n";
+    if ($custom_url_en) $content .= "- URL (Inglés): " . $custom_url_en . "\n";
+    if ($custom_url_fr) $content .= "- URL (Francés): " . $custom_url_fr . "\n";
+    $content .= "\n";
 
     // Páginas (excluyendo noindex)
-    $pages = get_pages(array('post_status' => 'publish'));
+    $pages = get_pages(['post_status' => 'publish']);
     if (!empty($pages)) {
         $content .= "## Páginas\n";
         foreach ($pages as $page) {
@@ -149,7 +185,7 @@ function generate_llms_txt($force_overwrite = false) {
     }
 
     // Posts (excluyendo noindex)
-    $posts = get_posts(array('numberposts' => -1, 'post_status' => 'publish'));
+    $posts = get_posts(['numberposts' => -1, 'post_status' => 'publish']);
     if (!empty($posts)) {
         $content .= "## Posts\n";
         foreach ($posts as $post) {
@@ -166,7 +202,7 @@ function generate_llms_txt($force_overwrite = false) {
 
     // Productos (WooCommerce, excluyendo noindex)
     if (class_exists('WooCommerce')) {
-        $products = wc_get_products(array('status' => 'publish', 'limit' => -1));
+        $products = wc_get_products(['status' => 'publish', 'limit' => -1]);
         if (!empty($products)) {
             $content .= "## Productos\n";
             foreach ($products as $product) {
@@ -180,7 +216,7 @@ function generate_llms_txt($force_overwrite = false) {
             $content .= "\n";
         }
 
-        $product_categories = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => true));
+        $product_categories = get_terms(['taxonomy' => 'product_cat', 'hide_empty' => true]);
         if (!empty($product_categories)) {
             $content .= "## Categorías de Producto\n";
             foreach ($product_categories as $category) {
@@ -193,7 +229,7 @@ function generate_llms_txt($force_overwrite = false) {
         }
     }
 
-    // Añadir BOM para UTF-8 y escribir el archivo
+    // Escribir archivo con codificación UTF-8 y BOM
     $content_with_bom = "\xEF\xBB\xBF" . $content;
     $result = file_put_contents($file_path, $content_with_bom);
     if ($result === false) {
@@ -204,7 +240,11 @@ function generate_llms_txt($force_overwrite = false) {
     return true;
 }
 
-// Función para borrar el archivo llms.txt
+/**
+ * Borra el archivo llms.txt si existe.
+ *
+ * @return bool True si se borró, false si falló o no existía.
+ */
 function delete_llms_txt() {
     $file_path = ABSPATH . "llms.txt";
     if (file_exists($file_path) && unlink($file_path)) {
@@ -215,80 +255,144 @@ function delete_llms_txt() {
     return false;
 }
 
-// Hooks
+/**
+ * Hooks de activación y actualización de contenido.
+ */
 register_activation_hook(__FILE__, function() {
-    generate_llms_txt(true);
+    generate_llms_txt(true); // Generar al activar
 });
 add_action('save_post', 'generate_llms_txt');
 
-// Configuración del panel de administración
+/**
+ * Configura el menú de administración.
+ */
 add_action('admin_menu', 'llms_txt_admin_menu');
 function llms_txt_admin_menu() {
-    add_options_page('LLMs.txt Settings', 'LLMs.txt', 'manage_options', 'llms-txt', 'llms_txt_settings_page');
+    add_options_page(
+        __('LLMs.txt Settings', 'llms-txt-generator'),
+        __('LLMs.txt', 'llms-txt-generator'),
+        'manage_options',
+        'llms-txt',
+        'llms_txt_settings_page'
+    );
 }
 
+/**
+ * Inicializa las configuraciones del plugin.
+ */
 add_action('admin_init', 'llms_txt_settings_init');
 function llms_txt_settings_init() {
-    register_setting('llms_txt_options', 'llms_txt_name');
-    register_setting('llms_txt_options', 'llms_txt_description');
-    register_setting('llms_txt_options', 'llms_txt_keywords');
-    register_setting('llms_txt_options', 'llms_txt_language');
-    register_setting('llms_txt_options', 'llms_txt_address');
-    register_setting('llms_txt_options', 'llms_txt_location');
-    register_setting('llms_txt_options', 'llms_txt_instructions');
-    register_setting('llms_txt_options', 'llms_txt_custom_instructions');
-    register_setting('llms_txt_options', 'llms_txt_date_format');
+    // Registrar opciones
+    register_setting('llms_txt_options', 'llms_txt_name', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_description', ['sanitize_callback' => 'sanitize_textarea_field']);
+    register_setting('llms_txt_options', 'llms_txt_keywords', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_language', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_address', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_location', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_url_es', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_url_en', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_url_fr', ['sanitize_callback' => 'esc_url_raw']);
+    register_setting('llms_txt_options', 'llms_txt_instructions', ['sanitize_callback' => 'sanitize_text_field']);
+    register_setting('llms_txt_options', 'llms_txt_custom_instructions', ['sanitize_callback' => 'sanitize_textarea_field']);
+    register_setting('llms_txt_options', 'llms_txt_date_format', ['sanitize_callback' => 'sanitize_text_field']);
 
-    add_settings_section('llms_txt_section', 'Configuración de LLMs.txt', 'llms_txt_section_callback', 'llms-txt');
+    // Sección de configuración
+    add_settings_section('llms_txt_section', __('Configuración de LLMs.txt', 'llms-txt-generator'), 'llms_txt_section_callback', 'llms-txt');
 
-    add_settings_field('llms_txt_name', 'Nombre', 'llms_txt_name_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_description', 'Descripción', 'llms_txt_description_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_keywords', 'Palabras clave', 'llms_txt_keywords_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_language', 'Idioma', 'llms_txt_language_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_address', 'Dirección', 'llms_txt_address_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_location', 'Ubicación', 'llms_txt_location_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_instructions', 'Instrucciones para IAs', 'llms_txt_instructions_callback', 'llms-txt', 'llms_txt_section');
-    add_settings_field('llms_txt_date_format', 'Formato de Fecha', 'llms_txt_date_format_callback', 'llms-txt', 'llms_txt_section');
+    // Campos de configuración
+    add_settings_field('llms_txt_name', __('Nombre', 'llms-txt-generator'), 'llms_txt_name_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_description', __('Descripción', 'llms-txt-generator'), 'llms_txt_description_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_keywords', __('Palabras clave', 'llms-txt-generator'), 'llms_txt_keywords_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_language', __('Idioma', 'llms-txt-generator'), 'llms_txt_language_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_address', __('Dirección', 'llms-txt-generator'), 'llms_txt_address_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_location', __('Ubicación', 'llms-txt-generator'), 'llms_txt_location_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_url_es', __('URL (Español)', 'llms-txt-generator'), 'llms_txt_url_es_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_url_en', __('URL (Inglés)', 'llms-txt-generator'), 'llms_txt_url_en_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_url_fr', __('URL (Francés)', 'llms-txt-generator'), 'llms_txt_url_fr_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_instructions', __('Instrucciones para IAs', 'llms-txt-generator'), 'llms_txt_instructions_callback', 'llms-txt', 'llms_txt_section');
+    add_settings_field('llms_txt_date_format', __('Formato de Fecha', 'llms-txt-generator'), 'llms_txt_date_format_callback', 'llms-txt', 'llms_txt_section');
 }
 
+/**
+ * Callback para la sección de configuración.
+ */
 function llms_txt_section_callback() {
-    echo '<p>Configura los datos que se incluirán en el archivo llms.txt.</p>';
+    echo '<p>' . esc_html__('Configura los datos que se incluirán en el archivo llms.txt.', 'llms-txt-generator') . '</p>';
 }
 
+/**
+ * Callbacks para los campos de configuración.
+ */
 function llms_txt_name_callback() {
     $value = get_option('llms_txt_name', get_bloginfo('name'));
-    ?><input type="text" name="llms_txt_name" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Nombre del sitio (por defecto: <?php echo esc_html(get_bloginfo('name')); ?>).</p><?php
+    ?>
+    <input type="text" name="llms_txt_name" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php echo esc_html__('Nombre del sitio (por defecto: ', 'llms-txt-generator') . get_bloginfo('name') . ').'; ?></p>
+    <?php
 }
 
 function llms_txt_description_callback() {
     $value = get_option('llms_txt_description', get_bloginfo('description'));
-    ?><input type="text" name="llms_txt_description" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Descripción del sitio (por defecto: <?php echo esc_html(get_bloginfo('description')); ?>).</p><?php
+    ?>
+    <textarea name="llms_txt_description" class="large-text" rows="5"><?php echo esc_textarea($value); ?></textarea>
+    <p class="description"><?php echo esc_html__('Descripción del sitio (por defecto: ', 'llms-txt-generator') . get_bloginfo('description') . ').'; ?></p>
+    <?php
 }
 
 function llms_txt_keywords_callback() {
     $value = get_option('llms_txt_keywords', '');
-    ?><input type="text" name="llms_txt_keywords" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Palabras clave separadas por comas.</p><?php
+    ?>
+    <input type="text" name="llms_txt_keywords" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('Palabras clave separadas por comas.', 'llms-txt-generator'); ?></p>
+    <?php
 }
 
 function llms_txt_language_callback() {
     $value = get_option('llms_txt_language', get_bloginfo('language'));
-    ?><input type="text" name="llms_txt_language" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Idioma del sitio (por defecto: <?php echo esc_html(get_bloginfo('language')); ?>).</p><?php
+    ?>
+    <input type="text" name="llms_txt_language" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php echo esc_html__('Idioma del sitio (por defecto: ', 'llms-txt-generator') . get_bloginfo('language') . ').'; ?></p>
+    <?php
 }
 
 function llms_txt_address_callback() {
     $value = get_option('llms_txt_address', '');
-    ?><input type="text" name="llms_txt_address" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Dirección física o virtual.</p><?php
+    ?>
+    <input type="text" name="llms_txt_address" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('Dirección física o virtual.', 'llms-txt-generator'); ?></p>
+    <?php
 }
 
 function llms_txt_location_callback() {
     $value = get_option('llms_txt_location', '');
-    ?><input type="text" name="llms_txt_location" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Ubicación geográfica.</p><?php
+    ?>
+    <input type="text" name="llms_txt_location" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('Ubicación geográfica.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_url_es_callback() {
+    $value = get_option('llms_txt_url_es', home_url('/es'));
+    ?>
+    <input type="url" name="llms_txt_url_es" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del sitio en español.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_url_en_callback() {
+    $value = get_option('llms_txt_url_en', home_url('/en'));
+    ?>
+    <input type="url" name="llms_txt_url_en" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del sitio en inglés.', 'llms-txt-generator'); ?></p>
+    <?php
+}
+
+function llms_txt_url_fr_callback() {
+    $value = get_option('llms_txt_url_fr', home_url('/fr'));
+    ?>
+    <input type="url" name="llms_txt_url_fr" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php esc_html_e('URL del sitio en francés.', 'llms-txt-generator'); ?></p>
+    <?php
 }
 
 function llms_txt_instructions_callback() {
@@ -299,17 +403,17 @@ function llms_txt_instructions_callback() {
     $custom_instruction = get_option('llms_txt_custom_instructions', '');
 
     $options = [
-        'Priorizar contenido reciente y utilizar fechas para determinar relevancia' => 'Priorizar contenido reciente y utilizar fechas para determinar relevancia',
-        'Considerar todas las URLs como contenido principal y procesar en orden cronológico' => 'Considerar todas las URLs como contenido principal y procesar en orden cronológico',
-        'Indexar todo el contenido y usar palabras clave para clasificar temas' => 'Indexar todo el contenido y usar palabras clave para clasificar temas',
-        'Procesar el archivo como una representación completa del sitio y seguir el sitemap para más detalles' => 'Procesar el archivo como una representación completa del sitio y seguir el sitemap para más detalles',
-        'Ignorar contenido anterior a 2023 y enfocarse en datos actuales' => 'Ignorar contenido anterior a 2023 y enfocarse en datos actuales',
-        'Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles' => 'Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles',
-        'Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales' => 'Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales',
-        'Enfocarse en productos activos y categorías, ignorar contenido anterior a 2024, y procesar en orden de fecha descendente' => 'Enfocarse en productos activos y categorías, ignorar contenido anterior a 2024, y procesar en orden de fecha descendente',
-        'Priorizar productos y categorías, incluir posts recientes como promociones, y usar el sitemap para más URLs' => 'Priorizar productos y categorías, incluir posts recientes como promociones, y usar el sitemap para más URLs',
-        'Procesar productos y categorías por idioma, ignorar contenido anterior a hace 18 meses, y seguir el sitemap correspondiente' => 'Procesar productos y categorías por idioma, ignorar contenido anterior a hace 18 meses, y seguir el sitemap correspondiente',
-        'Personalizado' => 'Personalizado',
+        'Priorizar contenido reciente y utilizar fechas para determinar relevancia' => __('Priorizar contenido reciente y utilizar fechas para determinar relevancia', 'llms-txt-generator'),
+        'Considerar todas las URLs como contenido principal y procesar en orden cronológico' => __('Considerar todas las URLs como contenido principal y procesar en orden cronológico', 'llms-txt-generator'),
+        'Indexar todo el contenido y usar palabras clave para clasificar temas' => __('Indexar todo el contenido y usar palabras clave para clasificar temas', 'llms-txt-generator'),
+        'Procesar el archivo como una representación completa del sitio y seguir el sitemap para más detalles' => __('Procesar el archivo como una representación completa del sitio y seguir el sitemap para más detalles', 'llms-txt-generator'),
+        'Ignorar contenido anterior a 2023 y enfocarse en datos actuales' => __('Ignorar contenido anterior a 2023 y enfocarse en datos actuales', 'llms-txt-generator'),
+        'Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles' => __('Priorizar contenido reciente y procesar el archivo como una representación completa del sitio, siguiendo el sitemap para más detalles', 'llms-txt-generator'),
+        'Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales' => __('Priorizar productos y categorías actuales, ignorar contenido anterior a hace 2 años, y usar el sitemap para detalles adicionales', 'llms-txt-generator'),
+        'Enfocarse en productos activos y categorías, ignorar contenido anterior a 2024, y procesar en orden de fecha descendente' => __('Enfocarse en productos activos y categorías, ignorar contenido anterior a 2024, y procesar en orden de fecha descendente', 'llms-txt-generator'),
+        'Priorizar productos y categorías, incluir posts recientes como promociones, y usar el sitemap para más URLs' => __('Priorizar productos y categorías, incluir posts recientes como promociones, y usar el sitemap para más URLs', 'llms-txt-generator'),
+        'Procesar productos y categorías por idioma, ignorar contenido anterior a hace 18 meses, y seguir el sitemap correspondiente' => __('Procesar productos y categorías por idioma, ignorar contenido anterior a hace 18 meses, y seguir el sitemap correspondiente', 'llms-txt-generator'),
+        'Personalizado' => __('Personalizado', 'llms-txt-generator'),
     ];
     ?>
     <select name="llms_txt_instructions" id="llms_txt_instructions_select" onchange="toggleCustomInstruction(this.value)">
@@ -319,9 +423,9 @@ function llms_txt_instructions_callback() {
     </select>
     <div id="llms_txt_custom_instruction_wrapper" style="display: <?php echo $selected_instruction === 'Personalizado' ? 'block' : 'none'; ?>; margin-top: 10px;">
         <textarea name="llms_txt_custom_instructions" class="large-text" rows="3"><?php echo esc_textarea($custom_instruction); ?></textarea>
-        <p class="description">Escribe tu instrucción personalizada aquí.</p>
+        <p class="description"><?php esc_html_e('Escribe tu instrucción personalizada aquí.', 'llms-txt-generator'); ?></p>
     </div>
-    <p class="description">Elige una instrucción para guiar a las IAs en el procesamiento del archivo.</p>
+    <p class="description"><?php esc_html_e('Elige una instrucción para guiar a las IAs en el procesamiento del archivo.', 'llms-txt-generator'); ?></p>
     <script>
         function toggleCustomInstruction(value) {
             document.getElementById('llms_txt_custom_instruction_wrapper').style.display = value === 'Personalizado' ? 'block' : 'none';
@@ -332,87 +436,132 @@ function llms_txt_instructions_callback() {
 
 function llms_txt_date_format_callback() {
     $value = get_option('llms_txt_date_format', 'Y-m-d');
-    ?><input type="text" name="llms_txt_date_format" value="<?php echo esc_attr($value); ?>" class="regular-text" />
-    <p class="description">Formato de fecha (ej. "Y-m-d" para 2025-03-24, "d F Y" para 24 marzo 2025). Ver <a href="https://www.php.net/manual/es/function.date.php" target="_blank">documentación PHP</a>.</p><?php
+    ?>
+    <input type="text" name="llms_txt_date_format" value="<?php echo esc_attr($value); ?>" class="regular-text" />
+    <p class="description"><?php echo wp_kses(__('Formato de fecha (ej. "Y-m-d" para 2025-03-24, "d F Y" para 24 marzo 2025). Ver <a href="https://www.php.net/manual/es/function.date.php" target="_blank">documentación PHP</a>.', 'llms-txt-generator'), ['a' => ['href' => [], 'target' => []]]); ?></p>
+    <?php
 }
 
+/**
+ * Maneja las acciones del formulario de gestión manual.
+ */
 add_action('admin_post_llms_txt_action', 'handle_llms_txt_action');
 function handle_llms_txt_action() {
     if (!current_user_can('manage_options') || !isset($_POST['llms_txt_nonce']) || !wp_verify_nonce($_POST['llms_txt_nonce'], 'llms_txt_action')) {
-        wp_die('Acceso no autorizado.');
+        wp_die(__('Acceso no autorizado.', 'llms-txt-generator'));
     }
 
     $action = isset($_POST['action_type']) ? sanitize_text_field($_POST['action_type']) : '';
     $message = '';
 
     if ($action === 'delete') {
-        $message = delete_llms_txt() ? "El archivo llms.txt ha sido borrado correctamente." : "Error al borrar el archivo llms.txt o no existía.";
+        $message = delete_llms_txt() ? __('El archivo llms.txt ha sido borrado correctamente.', 'llms-txt-generator') : __('Error al borrar el archivo llms.txt o no existía.', 'llms-txt-generator');
     } elseif ($action === 'overwrite') {
-        $message = generate_llms_txt(true) ? "El archivo llms.txt ha sido sobrescrito correctamente." : "Error al sobrescribir el archivo llms.txt.";
+        $message = generate_llms_txt(true) ? __('El archivo llms.txt ha sido sobrescrito correctamente.', 'llms-txt-generator') : __('Error al sobrescribir el archivo llms.txt.', 'llms-txt-generator');
     }
 
     wp_redirect(admin_url('options-general.php?page=llms-txt&message=' . urlencode($message)));
     exit;
 }
 
+/**
+ * Renderiza la página de configuración del plugin.
+ */
 function llms_txt_settings_page() {
     $message = isset($_GET['message']) ? esc_html($_GET['message']) : '';
     $seo_plugin = llms_txt_detect_seo_plugin();
     $sitemap_url = $seo_plugin ? $seo_plugin['sitemap'] : 'No disponible';
     ?>
     <div class="wrap">
-        <h1>LLMs.txt Settings</h1>
-        <p>El archivo <code>llms.txt</code> proporciona a las inteligencias artificiales una representación estructurada de tu sitio, incluyendo metadatos, páginas, posts, productos y categorías, para facilitar su indexación y comprensión. Configura los datos y genera el archivo manualmente según necesites.</p>
+        <h1><?php esc_html_e('LLMs.txt Settings', 'llms-txt-generator'); ?></h1>
+        <p><?php esc_html_e('El archivo <code>llms.txt</code> proporciona a las inteligencias artificiales una representación estructurada de tu sitio, incluyendo metadatos, páginas, posts, productos y categorías, para facilitar su indexación y comprensión. Configura los datos y genera el archivo manualmente según necesites.', 'llms-txt-generator'); ?></p>
         <?php if ($message) { ?>
             <div class="notice notice-success is-dismissible"><p><?php echo $message; ?></p></div>
         <?php } ?>
 
-        <h2>Configuración</h2>
+        <h2><?php esc_html_e('Configuración', 'llms-txt-generator'); ?></h2>
         <form method="post" action="options.php">
-            <?php
-            settings_fields('llms_txt_options');
-            do_settings_sections('llms-txt');
-            submit_button('Guardar Configuración');
-            ?>
+            <?php settings_fields('llms_txt_options'); ?>
+            <table class="form-table">
+                <tr>
+                    <th scope="row"><?php esc_html_e('Nombre', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_name_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Idioma', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_language_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Descripción', 'llms-txt-generator'); ?></th>
+                    <td colspan="3"><?php llms_txt_description_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Palabras clave', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_keywords_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Dirección', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_address_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Ubicación', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_location_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('URL (Español)', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_url_es_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('URL (Inglés)', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_url_en_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('URL (Francés)', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_url_fr_callback(); ?></td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e('Instrucciones para IAs', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_instructions_callback(); ?></td>
+                    <th scope="row"><?php esc_html_e('Formato de Fecha', 'llms-txt-generator'); ?></th>
+                    <td><?php llms_txt_date_format_callback(); ?></td>
+                </tr>
+            </table>
+            <?php submit_button(__('Guardar Configuración', 'llms-txt-generator')); ?>
         </form>
 
-        <h2>Gestión Manual</h2>
-        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+        <h2><?php esc_html_e('Gestión Manual', 'llms-txt-generator'); ?></h2>
+        <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>">
             <input type="hidden" name="action" value="llms_txt_action">
             <?php wp_nonce_field('llms_txt_action', 'llms_txt_nonce'); ?>
             <p>
-                <button type="submit" name="action_type" value="overwrite" class="button button-primary">Generar llms.txt</button>
-                <span class="description">Crea o sobrescribe el archivo llms.txt con la configuración actual.</span>
+                <button type="submit" name="action_type" value="overwrite" class="button button-primary"><?php esc_html_e('Generar llms.txt', 'llms-txt-generator'); ?></button>
+                <span class="description"><?php esc_html_e('Crea o sobrescribe el archivo llms.txt con la configuración actual.', 'llms-txt-generator'); ?></span>
             </p>
             <p>
-                <button type="submit" name="action_type" value="delete" class="button button-secondary">Borrar Archivo</button>
-                <span class="description">Elimina el archivo llms.txt existente.</span>
+                <button type="submit" name="action_type" value="delete" class="button button-secondary"><?php esc_html_e('Borrar Archivo', 'llms-txt-generator'); ?></button>
+                <span class="description"><?php esc_html_e('Elimina el archivo llms.txt existente.', 'llms-txt-generator'); ?></span>
             </p>
             <p>
-                <button type="button" class="button" onclick="document.getElementById('preview').style.display='block';">Previsualizar</button>
+                <button type="button" class="button" onclick="document.getElementById('preview').style.display='block';"><?php esc_html_e('Previsualizar', 'llms-txt-generator'); ?></button>
             </p>
             <div id="preview" style="display:none;">
-                <h4>Previsualización</h4>
+                <h4><?php esc_html_e('Previsualización', 'llms-txt-generator'); ?></h4>
                 <textarea class="large-text" rows="10" readonly><?php echo esc_textarea(generate_llms_txt_preview()); ?></textarea>
             </div>
         </form>
 
-        <h2>Información del Sistema</h2>
-        <p><strong>Ubicación del archivo:</strong> <?php echo ABSPATH . 'llms.txt'; ?></p>
-        <p><strong>Estado:</strong> <?php echo file_exists(ABSPATH . 'llms.txt') ? 'Existe' : 'No existe'; ?></p>
-        <p><strong>Plugin SEO Detectado:</strong> <?php echo $seo_plugin ? $seo_plugin['name'] : 'Ninguno'; ?></p>
-        <p><strong>Sitemap XML:</strong> 
+        <h2><?php esc_html_e('Información del Sistema', 'llms-txt-generator'); ?></h2>
+        <p><strong><?php esc_html_e('Ubicación del archivo:', 'llms-txt-generator'); ?></strong> <?php echo esc_html(ABSPATH . 'llms.txt'); ?></p>
+        <p><strong><?php esc_html_e('Estado:', 'llms-txt-generator'); ?></strong> <?php echo file_exists(ABSPATH . 'llms.txt') ? esc_html__('Existe', 'llms-txt-generator') : esc_html__('No existe', 'llms-txt-generator'); ?></p>
+        <p><strong><?php esc_html_e('Plugin SEO Detectado:', 'llms-txt-generator'); ?></strong> <?php echo $seo_plugin ? esc_html($seo_plugin['name']) : esc_html__('Ninguno', 'llms-txt-generator'); ?></p>
+        <p><strong><?php esc_html_e('Sitemap XML:', 'llms-txt-generator'); ?></strong> 
             <?php if ($seo_plugin && $sitemap_url) { ?>
                 <a href="<?php echo esc_url($sitemap_url); ?>" target="_blank"><?php echo esc_url($sitemap_url); ?></a>
             <?php } else { ?>
-                No disponible (no se detectó un plugin SEO con sitemap).
+                <?php esc_html_e('No disponible (no se detectó un plugin SEO con sitemap).', 'llms-txt-generator'); ?>
             <?php } ?>
         </p>
     </div>
     <?php
 }
 
-// Función para previsualizar el contenido
+/**
+ * Genera una previsualización del contenido del archivo llms.txt.
+ *
+ * @return string Contenido con BOM incluido.
+ */
 function generate_llms_txt_preview() {
     ob_start();
     generate_llms_txt(true);

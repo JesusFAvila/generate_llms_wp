@@ -1,13 +1,16 @@
 <?php
 /*
  * Plugin Name: LLMs.txt Generator
+ * Plugin URI: https://github.com/JesusFAvila/generate_llms_wp
  * Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
  * Version: 2.4
- * Author: Jesús Fernández Ávila
- * GitHub: https://github.com/JesusFAvila/
+ * Author: jesusfa
+ * Author URI: https://profiles.wordpress.org/jesusfa/
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain: llms-txt-generator
  * Requires at least: 5.0
  * Requires PHP: 7.4
- * Text Domain: llms-txt-generator
  */
 
 if (!defined('ABSPATH')) {

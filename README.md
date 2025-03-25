@@ -158,7 +158,7 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Respuesta a reportes de problemas con caracteres acentuados en varias webs.
   - El BOM asegura que los clientes identifiquen correctamente la codificación UTF-8.
 
-## Versión 2.2.2 (Actual)
+## Versión 2.2.2
 - **Fecha**: 24 de marzo de 2025.
 - **Cambios**:
   - Añadida exclusión de contenido marcado como `noindex` en Páginas, Posts, Productos y Categorías de Producto.
@@ -172,9 +172,36 @@ Este archivo documenta las versiones del plugin "LLMs.txt Generator", creado par
   - Si no hay plugin SEO activo, no se aplica filtro de `noindex` y se incluye todo el contenido publicado.
   - Alinea el archivo `llms.txt` con las preferencias de indexación del sitio.
 
+## Versión 2.3 (Actual)
+- **Fecha**: 24 de marzo de 2025.
+- **Cambios**:
+  - Panel de administración: Campos de configuración reorganizados en una tabla de 2 columnas para reducir espacio visual.
+  - Campo "Descripción" convertido en un `<textarea>` más amplio (5 filas) para mayor visibilidad.
+  - Añadidos campos para URLs específicas por idioma (español, inglés, francés) con valores por defecto basados en `home_url()`.
+  - Especificada compatibilidad en el encabezado: WordPress 5.0+ y PHP 7.4+.
+  - Código completamente comentado con PHPDoc y comentarios en línea para facilitar la comprensión.
+  - Aplicadas buenas prácticas: sanitización y escapado en entradas/salidas, uso de nonces, modularidad y legibilidad.
+  - Añadido soporte básico para traducción con `Text Domain: llms-txt-generator`.
+- **Funcionalidades**:
+  - Nuevas opciones `llms_txt_url_es`, `llms_txt_url_en`, `llms_txt_url_fr` incluidas en la sección "Acerca de" del archivo.
+  - Interfaz de administración optimizada y más segura.
+  - Mantiene exclusión de `noindex`, codificación UTF-8 con BOM y todas las características previas.
+- **Notas**: 
+  - Mejora la usabilidad del panel y la flexibilidad para sitios multilingües sin generar archivos separados.
+  - Compatible con instalaciones modernas de WordPress y PHP; probado para seguridad y rendimiento.
+
 ## Características Generales
 - **Generación**: Automática al activar el plugin o guardar un post; manual mediante "Generar llms.txt".
-- **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración y acciones manuales.
+- **Gestión**: Panel en `Ajustes > LLMs.txt` con configuración en tabla de 2 columnas y acciones manuales.
 - **SEO**: Integración con plugins SEO para títulos, descripciones y estado `noindex`; detección de sitemap.
 - **WooCommerce**: Soporte completo para productos y categorías con descripciones, excluyendo `noindex`.
-- **Codificación**: UTF-
+- **Codificación**: UTF-8 con BOM para compatibilidad con caracteres especiales.
+- **Multilingüe**: URLs por idioma (español, inglés, francés) configurables en el panel.
+- **Depuración**: Logs en `wp-content/debug.log` si `WP_DEBUG` está activo.
+
+## Notas Finales
+- **Rendimiento**: Sin límites, el archivo puede crecer en sitios grandes; considerar caché si es necesario.
+- **Compatibilidad**: Probado con WordPress 5.0+, PHP 7.4+, WooCommerce y plugins SEO populares.
+- **Futuras Mejoras**: Posibilidad de añadir soporte para CPTs específicos, filtros de contenido o internacionalización completa.
+
+Última actualización: 24 de marzo de 2025.

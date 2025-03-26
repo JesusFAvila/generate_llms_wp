@@ -1,4 +1,4 @@
-=== LLMs.txt Generator ===
+=== LLMS Generator ===
 Contributors: jesusfa
 Tags: llms, ai, metadata, seo, woocommerce
 Requires at least: 5.0
@@ -22,7 +22,7 @@ Características:
 
 == Installation ==
 1. Descarga el plugin desde el directorio de WordPress.org.
-2. Sube la carpeta `llms-txt-generator` a `/wp-content/plugins/` o instálalo desde el panel de WordPress.
+2. Sube la carpeta `generate_llms_wp` a `/wp-content/plugins/` o instálalo directamente desde el panel de WordPress.
 3. Activa el plugin desde "Plugins" en el administrador.
 4. Configura las opciones en "Ajustes > LLMs.txt" y genera el archivo manualmente.
 
@@ -57,4 +57,4 @@ Sí, incluye campos para URLs por idioma, redes sociales y más.
 Actualiza para añadir soporte a redes sociales y datos de contacto.
 
 == License ==
-Este plugin está licenciado bajo GPLv2 o posterior. Puedes modificarlo y distribuirlo libremente bajo los mismos términos.
+Este plugin está licenciado bajo la Licencia Pública General de GNU versión 2 (GPLv2) o posterior. Puedes modificarlo y distribuirlo libremente bajo los mismos términos. Para más detalles, consulta el archivo de licencia en <https://www.gnu.org/licenses/gpl-2.0.html>.

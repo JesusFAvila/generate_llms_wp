@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name: LLMs.txt Generator
+ * Plugin Name: LLMS Generator
  * Plugin URI: https://github.com/JesusFAvila/generate_llms_wp
  * Description: Genera un archivo llms.txt optimizado para modelos de lenguaje con metadatos del sitio, páginas, posts, productos y categorías, excluyendo contenido con noindex.
  * Version: 2.4
